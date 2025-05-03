@@ -138,6 +138,20 @@ jobs:
       - name: Running gclient runhooks
         run: gclient runhooks
 
+      - name: Check if rules.aar exists after runhooks
+        run: |
+          FILE_PATH="$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/rules.aar"
+          if [ -f "$FILE_PATH" ]; then
+            echo "File $FILE_PATH exists."
+          else
+            echo "File $FILE_PATH does NOT exist!"
+            # Optionally, list directory contents for debugging
+            echo "Listing contents of $GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/"
+            ls -l "$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/" || echo "Directory listing failed."
+            # Exit with error if file is missing, as gn gen will fail
+            exit 1 
+          fi
+
       # --- Start: Force Python 2 before gn gen ---
       - name: Check Python versions after runhooks, before forcing Python 2
         run: |
