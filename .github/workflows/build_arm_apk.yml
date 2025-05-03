@@ -131,6 +131,9 @@ jobs:
       - name: Running gclient runhooks
         run: gclient runhooks
 
+      - name: Set Python executable path for GN
+        run: echo "PYTHON_BIN_PATH=/usr/bin/python2" >> $GITHUB_ENV
+
       - name: Generating build files
         run: gn gen ./secondary_disk/out/android_arm
 
