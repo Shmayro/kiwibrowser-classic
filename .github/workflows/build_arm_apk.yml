@@ -138,29 +138,38 @@ jobs:
       - name: Running gclient runhooks
         run: gclient runhooks
 
-      - name: Check if rules.aar exists and is valid after runhooks
+      - name: Check if rules.aar exists and is a valid file or symlink to a file
         run: |
           FILE_PATH="$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/rules.aar"
           echo "Checking path: $FILE_PATH"
+          # Check if the path exists (could be file or symlink)
           if [ -e "$FILE_PATH" ]; then
             echo "Path exists."
+            # Check if it's a symbolic link
             if [ -L "$FILE_PATH" ]; then
               echo "Path is a symbolic link."
+              # Resolve the absolute path of the target
               TARGET_PATH=$(readlink -f "$FILE_PATH")
               echo "Link target resolves to: $TARGET_PATH"
+              # Check if the resolved target exists and is a regular file
               if [ -f "$TARGET_PATH" ]; then
                 echo "Link target exists and is a file. Symlink appears valid."
               else
-                echo "ERROR: Link target does NOT exist or is not a file! Symlink is broken."
+                echo "ERROR: Link target '$TARGET_PATH' does NOT exist or is not a file! Symlink is broken."
+                # List the target directory for debugging
                 ls -l "$(dirname "$TARGET_PATH")" || echo "Could not list target directory."
                 exit 1
               fi
+            # Check if it's a regular file (not a symlink)
             elif [ -f "$FILE_PATH" ]; then
               echo "Path is a regular file."
             else
-              echo "WARNING: Path exists but is neither a regular file nor a symlink?"
+              # Should not happen if -e passed, but good to have a case for it
+              echo "ERROR: Path exists but is neither a regular file nor a symlink?"
+              exit 1
             fi
           else
+            # Path doesn't exist at all
             echo "ERROR: Path $FILE_PATH does NOT exist!"
             echo "Listing contents of $GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/"
             ls -l "$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/" || echo "Directory listing failed."
