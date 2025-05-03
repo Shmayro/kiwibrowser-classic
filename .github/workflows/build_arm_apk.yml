@@ -128,27 +128,36 @@ jobs:
           echo "cache_dir = $HOME/cache" >> $HOME/.ccache/ccache.conf
           echo "hash_dir = false" >> $HOME/.ccache/ccache.conf
 
-      - name: Running gclient runhooks
-        run: gclient runhooks
-
-      - name: Check Python versions
+      - name: Check Python versions before runhooks
         run: |
-          echo "Default Python version before PATH modification:"
+          echo "Default Python version before runhooks:"
           which python && python --version || echo "python command failed or not found"
           echo "Python 2 version:"
           which python2 && python2 --version || echo "python2 command failed or not found"
+
+      - name: Running gclient runhooks
+        run: gclient runhooks
+
+      # --- Start: Force Python 2 before gn gen ---
+      - name: Check Python versions after runhooks, before forcing Python 2
+        run: |
+          echo "Default Python version after runhooks:"
+          which python && python --version || echo "python command failed or not found"
 
       # Force 'python' command to use python2
       - name: Create local bin and link python to python2
         run: |
           mkdir -p $HOME/.local/bin
+          # Remove existing link if it exists to avoid error
+          rm -f $HOME/.local/bin/python
           ln -s /usr/bin/python2 $HOME/.local/bin/python
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Verify Python points to python2
+      - name: Verify Python points to python2 before gn gen
         run: |
-          echo "Python version after PATH modification:"
+          echo "Python version after PATH modification (before gn gen):"
           which python && python --version
+      # --- End: Force Python 2 before gn gen ---
 
       - name: Generating build files
         run: gn gen ./secondary_disk/out/android_arm
