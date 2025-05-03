@@ -138,17 +138,32 @@ jobs:
       - name: Running gclient runhooks
         run: gclient runhooks
 
-      - name: Check if rules.aar exists after runhooks
+      - name: Check if rules.aar exists and is valid after runhooks
         run: |
           FILE_PATH="$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/rules.aar"
-          if [ -f "$FILE_PATH" ]; then
-            echo "File $FILE_PATH exists."
+          echo "Checking path: $FILE_PATH"
+          if [ -e "$FILE_PATH" ]; then
+            echo "Path exists."
+            if [ -L "$FILE_PATH" ]; then
+              echo "Path is a symbolic link."
+              TARGET_PATH=$(readlink -f "$FILE_PATH")
+              echo "Link target resolves to: $TARGET_PATH"
+              if [ -f "$TARGET_PATH" ]; then
+                echo "Link target exists and is a file. Symlink appears valid."
+              else
+                echo "ERROR: Link target does NOT exist or is not a file! Symlink is broken."
+                ls -l "$(dirname "$TARGET_PATH")" || echo "Could not list target directory."
+                exit 1
+              fi
+            elif [ -f "$FILE_PATH" ]; then
+              echo "Path is a regular file."
+            else
+              echo "WARNING: Path exists but is neither a regular file nor a symlink?"
+            fi
           else
-            echo "File $FILE_PATH does NOT exist!"
-            # Optionally, list directory contents for debugging
+            echo "ERROR: Path $FILE_PATH does NOT exist!"
             echo "Listing contents of $GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/"
             ls -l "$GITHUB_WORKSPACE/third_party/android_support_test_runner/lib/" || echo "Directory listing failed."
-            # Exit with error if file is missing, as gn gen will fail
             exit 1 
           fi
 
