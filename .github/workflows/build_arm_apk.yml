@@ -131,8 +131,24 @@ jobs:
       - name: Running gclient runhooks
         run: gclient runhooks
 
-      - name: Set Python executable path for GN
-        run: echo "PYTHON_BIN_PATH=/usr/bin/python2" >> $GITHUB_ENV
+      - name: Check Python versions
+        run: |
+          echo "Default Python version before PATH modification:"
+          which python && python --version || echo "python command failed or not found"
+          echo "Python 2 version:"
+          which python2 && python2 --version || echo "python2 command failed or not found"
+
+      # Force 'python' command to use python2
+      - name: Create local bin and link python to python2
+        run: |
+          mkdir -p $HOME/.local/bin
+          ln -s /usr/bin/python2 $HOME/.local/bin/python
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify Python points to python2
+        run: |
+          echo "Python version after PATH modification:"
+          which python && python --version
 
       - name: Generating build files
         run: gn gen ./secondary_disk/out/android_arm
